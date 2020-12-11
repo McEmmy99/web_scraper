@@ -19,7 +19,39 @@ const scraperObject = {
             links = links.map(el => el.querySelector('h3 > a').href)
             return links;
         });
-        console.log(urls);
+
+        //Loop through each of the links, open a new page instance and get the relevant data from the,
+         let pagePromise = (link) => new Promise(async(resolve, reject) => {
+            //An empty object that will conatain the needed data 
+            let dataObj = {};
+             let newPage = await browser.newPage();
+             console.log(`Navigating to ${link}...`);
+             //Open individual links as it is being interated on
+             await newPage.goto(link);
+             //Start populating the dataObj{} object.
+             dataObj['bookTitle'] = await newPage.$eval('.product_main > h1', text => text.textContent);
+             dataObj['bookPrice'] = await newPage.$eval('.price_color', text => text.textContent);
+             dataObj['noAvailable'] = await newPage.$eval('.instock.availability', text => {
+                 //Strip new line and tab spaces
+                 text = text.textContent.replace(/(\r\n\t|\n|\r|\t)/gm, "");
+                 //Get the number of stock avvailable
+                 //To extract only the number of stock from "In stock (19 available)"
+                 let regexp = /^.*\((.*)\).*$/i;
+                 let stockAvailable = regexp.exec(text)[1].split(' ')[0];
+                 return stockAvailable;
+             });
+             dataObj['imageUrl'] = await newPage.$eval('#product_gallery img', img => img.src);
+             dataObj['bookDescription'] = await newPage.$eval('#product_description', div => div.nextSibling.nextSibling.textContent);
+             dataObj['upc'] = await newPage.$eval('.table.table-striped > tbody > tr > td', table => table.textContent);
+             resolve(dataObj);
+             //Close each page every time it has scraped the needed data, then open another page in the next loop
+             await newPage.close();
+         });
+
+         for(link in urls){
+             let currentPageData = await pagePromise(urls[link]);
+             console.log(currentPageData);
+         }
     }
 }
 
