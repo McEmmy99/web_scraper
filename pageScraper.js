@@ -8,8 +8,11 @@ const scraperObject = {
         console.log(`Navigating to ${this.url}...`);
         //.goto() navigates to the url homepage
         await page.goto(this.url);
+        let scrapedData = [];
         //Wait for the required DOM to be rendered
-        await page.waitForSelector('.page_inner');
+        //scrapeCurrentPage() will be called recursively once it notices that there's still a 'next' button on the page
+        async function scrapeCurrentPage() {
+            await page.waitForSelector('.page_inner');
         //Get the link to all the required books
         //Be sure to only reurn a string or number with .$$eval() or .$eval() methods
         let urls = await page.$$eval('section ol > li', links => {
@@ -50,9 +53,30 @@ const scraperObject = {
 
          for(link in urls){
              let currentPageData = await pagePromise(urls[link]);
-             console.log(currentPageData);
+             scrapedData.push(currentPageData);
+             //  console.log(currentPageData);
          }
-    }
+         //When all the data on this page is done, click the next button and start scraping the next page
+         // First, check if this 'next' button exists
+         let nextButtonExist = false;
+         try {
+             const nextButton = await page.$eval('.next > a', a => a.textContent);
+             nextButtonExist = true;
+         } 
+         catch(err){
+             nextButtonExist = false;
+         }
+         if(nextButtonExist) {
+             await page.click('.next > a');
+             return scrapeCurrentPage(); //This function is called recursively
+         }
+         await page.close();
+         return scrapedData;
+        }
+        let data = await scrapeCurrentPage();
+        console.log(data);
+        return data;
+    }  
 }
 
 //The whole object is exported. 
