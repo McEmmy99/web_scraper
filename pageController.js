@@ -7,11 +7,17 @@ async function scrapeAll(browserInstance) {
     let browser;
     try{
         browser = await browserInstance;
-        //Here, the browserInstance is then passed to the scraper() method in pageScraper.js
-        await pageScraper.scraper(browser);
+        //Implementing scraping by category
+        let scrapedData = {};
+        // Call the scraper for different set of books to be scraped
+        //Here, the browserInstance and the category is then passed to the scraper() method in pageScraper.js
+        scrapedData['Travel'] = await pageScraper.scraper(browser, 'Travel');
+        await browser.close();
+        console.log(scrapedData)
+        // await pageScraper.scraper(browser);
     }
     catch (err) {
-        console.log("COuld not resolve the browser instance => ", err);
+        console.log("Could not resolve the browser instance => ", err);
     }
 }
 

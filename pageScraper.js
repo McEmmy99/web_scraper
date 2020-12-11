@@ -2,12 +2,22 @@
 
 const scraperObject = {
     url: 'http://books.toscrape.com',
-    async scraper(browser){
+    async scraper(browser, category){
         //.newPage() creates a new page instance in the browser instance
         let page = await browser.newPage();
         console.log(`Navigating to ${this.url}...`);
         //.goto() navigates to the url homepage
         await page.goto(this.url);
+        //Select the category of book to be displayed
+        let selectedCategory = await page.$$eval('.side_categories > ul > li > ul > li > a', (links, _category) => {
+            // Search for the element that has the matching text
+            links = links.map(a => a.textContent.replace(/(\r\n\t|\n|\r|\t|^\s|\s$|\B\s|\s\B)/gm, "") === _category ? a : null);
+            let link = links.filter(tx => tx !== null)[0];
+            return link.href;
+        }, category);
+        //navigate to the selected category
+        await page.goto(selectedCategory);
+
         let scrapedData = [];
         //Wait for the required DOM to be rendered
         //scrapeCurrentPage() will be called recursively once it notices that there's still a 'next' button on the page
