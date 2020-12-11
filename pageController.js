@@ -3,6 +3,7 @@
 // and passes it ot pageScrapper.js where the scraping scripts is executed
 
 const pageScraper = require('./pageScraper');
+const fs = require('fs');
 async function scrapeAll(browserInstance) {
     let browser;
     try{
@@ -15,7 +16,13 @@ async function scrapeAll(browserInstance) {
         scrapedData['HistoricalFiction'] = await pageScraper.scraper(browser, 'Historical Fiction');
         scrapedData['Mystery'] = await pageScraper.scraper(browser, 'Mystery');
         await browser.close();
-        console.log(scrapedData)
+        fs.writeFile("data.json", JSON.stringify(scrapedData), 'utf8', function(err){
+            if(err){
+                return console.log(err);
+            }
+            console.log("The data has been scraped and saved successfully! View it at '/.data.json'");
+        });
+        // console.log(scrapedData)
         // await pageScraper.scraper(browser);
     }
     catch (err) {
